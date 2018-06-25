@@ -21,10 +21,10 @@ static uint16_t CNT_1s = 75;		//用于避免四连发模式下两秒内连射8发过于密集的情况
 static uint16_t CNT_250ms = 18;	
 
 //手柄模式射击控制函数	
-void SetFrictionWheelSpeed(uint16_t x)
+void SetFrictionWheelSpeed(float x)
 {
-	//__HAL_TIM_SET_COMPARE(&FRICTION_TIM, TIM_CHANNEL_1, x);//配置数目不够
-	//__HAL_TIM_SET_COMPARE(&FRICTION_TIM, TIM_CHANNEL_2, x);
+	friclSpeedTarget = x;
+	fricrSpeedTarget = -x;
 }
 	
 //遥控器开启摩擦轮
@@ -46,18 +46,13 @@ void RemoteShootControl(RemoteSwitch_t *sw, uint8_t val)
 			if(sw->switch_value1 == REMOTE_SWITCH_CHANGE_3TO1)   
 			{
 				ShootState = NOSHOOTING;
-				SetFrictionWheelSpeed(1000);
+				SetFrictionWheelSpeed(0);
 				FrictionWheelState = FRICTION_WHEEL_OFF;
-				frictionRamp.ResetCounter(&frictionRamp);
 			}
 			else
 			{
-				SetFrictionWheelSpeed(1000 + (FRICTION_WHEEL_MAX_DUTY-1000)*frictionRamp.Calc(&frictionRamp)); 
-				if(frictionRamp.IsOverflow(&frictionRamp))
-				{
-					FrictionWheelState = FRICTION_WHEEL_ON; 	
-				}
-				
+				SetFrictionWheelSpeed(400); 
+				FrictionWheelState = FRICTION_WHEEL_ON; 				
 			}
 		}break;
 		case FRICTION_WHEEL_ON:
@@ -65,8 +60,7 @@ void RemoteShootControl(RemoteSwitch_t *sw, uint8_t val)
 			if(sw->switch_value1 == REMOTE_SWITCH_CHANGE_3TO1)   
 			{
 				FrictionWheelState = FRICTION_WHEEL_OFF;				  
-				SetFrictionWheelSpeed(1000); 
-				frictionRamp.ResetCounter(&frictionRamp);
+				SetFrictionWheelSpeed(0); 
 				ShootState = NOSHOOTING;
 			}
 			else if(sw->switch_value_raw == 2)

@@ -15,6 +15,7 @@
 #include "includes.h"
 
 #define CMGMMOTOR_CAN hcan1
+#define FRIC_CAN hcan2
 
 //RxID
 #define CMFL_RXID 0x201u
@@ -27,9 +28,13 @@
 
 #define UPMSG_RXID 0x305u
 
+#define FRICL_RXID 0x201u
+#define FRICR_RXID 0x202u
+
 //TxID
 #define CM_TXID 0x200u
 #define GM_TXID 0x1FFu
+#define FR_TXID 0x200u
 
 typedef struct{
 	uint16_t angle;
@@ -46,11 +51,14 @@ extern Motor820RRxMsg_t CMFLRx;
 extern Motor820RRxMsg_t CMFRRx;
 extern Motor820RRxMsg_t BulletRx;
 extern Motor820RRxMsg_t Bullet2Rx;
+extern Motor820RRxMsg_t FRICLRx;
+extern Motor820RRxMsg_t FRICRRx;
 extern Motor6623RxMsg_t GMPITCHRx;
 extern Motor6623RxMsg_t	GMYAWRx;
 
 extern uint8_t can1_update;
 extern uint8_t can1_type;
+extern uint8_t can2_update;
 
 void InitCanReception();
 

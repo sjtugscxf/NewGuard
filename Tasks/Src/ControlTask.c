@@ -40,12 +40,17 @@ PID_Regulator_t CM2SpeedPID = CHASSIS_MOTOR_SPEED_PID_DEFAULT;
 PID_Regulator_t BulletSpeedPID = CHASSIS_MOTOR_SPEED_PID_DEFAULT;
 PID_Regulator_t Bullet2SpeedPID = CHASSIS_MOTOR_SPEED_PID_DEFAULT;
 
+float friclSpeedTarget = 0;
+float fricrSpeedTarget = 0;
+PID_Regulator_t FRICLSpeedPID = CHASSIS_MOTOR_SPEED_PID_DEFAULT;
+PID_Regulator_t FRICRSpeedPID = CHASSIS_MOTOR_SPEED_PID_DEFAULT;
+
 //PID_Regulator_t BulletPositionPID = BULLET_POSITION_PID_DEFAULT;
 //PID_Regulator_t Bullet2PositionPID = BULLET_POSITION_PID_DEFAULT;
 //PID_Regulator_t BulletSpeedPID = BULLET_SPEED_PID_DEFAULT;//0.0, 0.00003
 //PID_Regulator_t Bullet2SpeedPID = BULLET_SPEED_PID_DEFAULT;//0.0, 0.00003
 
-int16_t CMFLIntensity = 0, CMFRIntensity = 0, BulletIntensity = 0,Bullet2Intensity = 0;
+int16_t CMFLIntensity = 0, CMFRIntensity = 0, BulletIntensity = 0,Bullet2Intensity = 0, FRICLIntensity = 0, FRICRIntensity = 0;
 int16_t yawIntensity = 0;		
 int16_t pitchIntensity = 0;
 
@@ -55,6 +60,8 @@ void CMControlInit(void)
 	CMRotatePID.Reset(&CMRotatePID);
 	CM1SpeedPID.Reset(&CM1SpeedPID);
 	CM2SpeedPID.Reset(&CM2SpeedPID);
+	FRICLSpeedPID.Reset(&FRICLSpeedPID);
+	FRICRSpeedPID.Reset(&FRICRSpeedPID);
 	BulletSpeedPID.Reset(&BulletSpeedPID);
 	Bullet2SpeedPID.Reset(&Bullet2SpeedPID);
 	//BulletPositionPID.Reset(&BulletPositionPID);
@@ -82,6 +89,28 @@ void ControlCMFR(void)
 
 	CM2SpeedPID.Calc(&CM2SpeedPID);
 	CMFRIntensity = CHASSIS_SPEED_ATTENUATION * CM2SpeedPID.output;
+}
+
+void ControlFRICL(void)
+{		
+	FRICLSpeedPID.ref =  friclSpeedTarget*0.075;
+	FRICLSpeedPID.ref = 160 * FRICLSpeedPID.ref;	
+			
+	FRICLSpeedPID.fdb = FRICLRx.RotateSpeed;
+
+	FRICLSpeedPID.Calc(&FRICLSpeedPID);
+	FRICLIntensity = CHASSIS_SPEED_ATTENUATION * FRICLSpeedPID.output;
+}
+
+void ControlFRICR(void)
+{		
+	FRICRSpeedPID.ref =  fricrSpeedTarget*0.075;
+	FRICRSpeedPID.ref = 160 * FRICRSpeedPID.ref;	
+			
+	FRICRSpeedPID.fdb = FRICRRx.RotateSpeed;
+
+	FRICRSpeedPID.Calc(&FRICRSpeedPID);
+	FRICRIntensity = CHASSIS_SPEED_ATTENUATION * FRICRSpeedPID.output;
 }
 
 void ControlBullet(void)
@@ -268,8 +297,7 @@ void WorkStateFSM(void)
 			if (inputmode == STOP) 
 			{
 				WorkState = STOP_STATE;
-				SetFrictionWheelSpeed(1000); 
-				frictionRamp.ResetCounter(&frictionRamp);
+				SetFrictionWheelSpeed(0); 
 				FrictionWheelState = FRICTION_WHEEL_OFF;
 			}
 			else if (inputmode == AUTO)
@@ -279,12 +307,9 @@ void WorkStateFSM(void)
 			
 			if(gameProgress == 4)
 			{
-				SetFrictionWheelSpeed(1000 + (FRICTION_WHEEL_MAX_DUTY-1000)*frictionRamp.Calc(&frictionRamp)); 
-				if(frictionRamp.IsOverflow(&frictionRamp))
-				{
-					WorkState = DEFEND_STATE;
-					FrictionWheelState = FRICTION_WHEEL_ON;
-				}
+				SetFrictionWheelSpeed(400); 
+				WorkState = DEFEND_STATE;
+				FrictionWheelState = FRICTION_WHEEL_ON;
 			}
 			
 			if (blink_cnt == 1000) 
@@ -304,7 +329,7 @@ void WorkStateFSM(void)
 			if (inputmode == STOP) 
 			{
 				WorkState = STOP_STATE;
-				SetFrictionWheelSpeed(1000); 
+				SetFrictionWheelSpeed(0); 
 				FrictionWheelState = FRICTION_WHEEL_OFF;
 				frictionRamp.ResetCounter(&frictionRamp);
 				bulletshootedcnt = 0;
@@ -349,7 +374,7 @@ void WorkStateFSM(void)
 			if (inputmode == STOP) 
 			{
 				WorkState = STOP_STATE;
-				SetFrictionWheelSpeed(1000); 
+				SetFrictionWheelSpeed(0); 
 				frictionRamp.ResetCounter(&frictionRamp);
 				FrictionWheelState = FRICTION_WHEEL_OFF;
 				bulletshootedcnt = 0;
@@ -470,6 +495,61 @@ void setGMMotor()
 			Error_Handler();
 		}
 		can1_update = 0;
+		HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
+		HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
+		HAL_NVIC_EnableIRQ(USART3_IRQn);
+		HAL_NVIC_EnableIRQ(USART6_IRQn);
+		HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+		HAL_NVIC_EnableIRQ(USART1_IRQn);
+		HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
+		HAL_NVIC_EnableIRQ(TIM7_IRQn);
+		#ifdef DEBUG_MODE
+			HAL_NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
+		#endif
+	}
+}
+
+//摩擦轮电机CAN信号控制
+void setFRICMotor()
+{
+	CanTxMsgTypeDef pData;
+	FRIC_CAN.pTxMsg = &pData;
+	
+	FRIC_CAN.pTxMsg->StdId = FR_TXID;
+	FRIC_CAN.pTxMsg->ExtId = 0;
+	FRIC_CAN.pTxMsg->IDE = CAN_ID_STD;
+	FRIC_CAN.pTxMsg->RTR = CAN_RTR_DATA;
+	FRIC_CAN.pTxMsg->DLC = 0x08;
+	
+	FRIC_CAN.pTxMsg->Data[0] = (uint8_t)(FRICLIntensity >> 8);
+	FRIC_CAN.pTxMsg->Data[1] = (uint8_t)FRICLIntensity;
+	FRIC_CAN.pTxMsg->Data[2] = (uint8_t)(FRICRIntensity >> 8);
+	FRIC_CAN.pTxMsg->Data[3] = (uint8_t)FRICRIntensity;
+	FRIC_CAN.pTxMsg->Data[4] = 0;
+	FRIC_CAN.pTxMsg->Data[5] = 0;
+	FRIC_CAN.pTxMsg->Data[6] = 0;
+	FRIC_CAN.pTxMsg->Data[7] = 0;
+	
+	if(can2_update == 1)
+	{
+		//CAN通信前关中断
+		HAL_NVIC_DisableIRQ(DMA1_Stream1_IRQn);
+	  HAL_NVIC_DisableIRQ(DMA2_Stream1_IRQn);
+		HAL_NVIC_DisableIRQ(USART3_IRQn);
+		HAL_NVIC_DisableIRQ(USART6_IRQn);
+		HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+		HAL_NVIC_DisableIRQ(USART1_IRQn);
+		HAL_NVIC_DisableIRQ(DMA2_Stream2_IRQn);
+		HAL_NVIC_DisableIRQ(TIM7_IRQn);
+		#ifdef DEBUG_MODE
+			HAL_NVIC_DisableIRQ(TIM1_UP_TIM10_IRQn);
+		#endif
+		if(HAL_CAN_Transmit_IT(&FRIC_CAN) != HAL_OK)
+		{
+			Error_Handler();
+		}
+		can2_update = 0;
+		//CAN通信后开中断，防止中断影响CAN信号发送
 		HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
 		HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
 		HAL_NVIC_EnableIRQ(USART3_IRQn);
@@ -729,6 +809,15 @@ void controlLoop()
 			Bullet2Intensity = 0;
 		}
 		setCMMotor();
+		
+		ControlFRICL();
+		ControlFRICR();
+		if(WorkState == STOP_STATE)
+		{
+			FRICLIntensity = 0;
+			FRICRIntensity = 0;
+		}
+		setFRICMotor();
 	}
 }
 

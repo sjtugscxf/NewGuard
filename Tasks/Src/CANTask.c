@@ -12,13 +12,14 @@
 #include "includes.h"
 
 #define CanRxGetU16(canRxMsg, num) (((uint16_t)canRxMsg.Data[num * 2] << 8) | (uint16_t)canRxMsg.Data[num * 2 + 1])
-uint8_t isRcanStarted_CMGM = 0;
-CanRxMsgTypeDef CMGMCanRxMsg;
-Motor820RRxMsg_t CMFLRx,CMFRRx,BulletRx,Bullet2Rx;
+uint8_t isRcanStarted_CMGM = 0, isRcanStarted_FRIC = 0;
+CanRxMsgTypeDef CMGMCanRxMsg, FRICCanRxMsg;
+Motor820RRxMsg_t CMFLRx,CMFRRx,BulletRx,Bullet2Rx,FRICLRx,FRICRRx;
 Motor6623RxMsg_t GMPITCHRx,GMYAWRx;
 
 uint8_t can1_update = 1;
 uint8_t can1_type = 0;
+uint8_t can2_update = 1;
 
 uint8_t redBuf = 0;
 uint8_t gameProgress = 0;
@@ -33,6 +34,10 @@ void HAL_CAN_TxCpltCallback(CAN_HandleTypeDef* hcan)
 	if(hcan == &CMGMMOTOR_CAN){
 		can1_update = 1;
 		can1_type = 1 - can1_type; 
+	}
+	else if(hcan == &FRIC_CAN)
+	{
+		can2_update = 1;
 	}
 }
 
@@ -58,6 +63,25 @@ void InitCanReception()
 		Error_Handler(); 
 	}
 	isRcanStarted_CMGM = 1;
+	
+	FRIC_CAN.pRxMsg = &FRICCanRxMsg;
+	/*##-- Configure the CAN2 Filter ###########################################*/
+	CAN_FilterConfTypeDef sFilterConfig2;
+	sFilterConfig2.FilterNumber = 14;//14 - 27//14
+	sFilterConfig2.FilterMode = CAN_FILTERMODE_IDMASK;
+	sFilterConfig2.FilterScale = CAN_FILTERSCALE_32BIT;
+	sFilterConfig2.FilterIdHigh = 0x0000;
+  sFilterConfig2.FilterIdLow = 0x0000;
+  sFilterConfig2.FilterMaskIdHigh = 0x0000;
+  sFilterConfig2.FilterMaskIdLow = 0x0000;
+  sFilterConfig2.FilterFIFOAssignment = 0;
+  sFilterConfig2.FilterActivation = ENABLE;
+  sFilterConfig2.BankNumber = 14;
+  HAL_CAN_ConfigFilter(&FRIC_CAN, &sFilterConfig2);
+	if(HAL_CAN_Receive_IT(&FRIC_CAN, CAN_FIFO0) != HAL_OK){
+		Error_Handler(); 
+	}
+	isRcanStarted_FRIC = 1;
 }
 
 //CAN接收中断入口函数
@@ -111,6 +135,28 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan){
 			isRcanStarted_CMGM = 0;
 		}else{
 			isRcanStarted_CMGM = 1;
+		}
+	}
+	else if(hcan == &FRIC_CAN)//CAN2数据
+	{
+		switch(FRICCanRxMsg.StdId)
+		{
+			case FRICL_RXID:
+				FRICLRx.angle = CanRxGetU16(CMGMCanRxMsg, 0);
+				FRICLRx.RotateSpeed = CanRxGetU16(CMGMCanRxMsg, 1);
+				break;
+			case FRICR_RXID:
+				FRICRRx.angle = CanRxGetU16(CMGMCanRxMsg, 0);
+				FRICRRx.RotateSpeed = CanRxGetU16(CMGMCanRxMsg, 1);
+				break;
+			default:
+			Error_Handler();
+		}
+		if(HAL_CAN_Receive_IT(&FRIC_CAN, CAN_FIFO0) != HAL_OK)
+		{
+			isRcanStarted_FRIC = 0;
+		}else{
+			isRcanStarted_FRIC = 1;
 		}
 	}
 }

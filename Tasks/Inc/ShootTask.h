@@ -33,7 +33,7 @@ typedef __packed enum
 
 void RemoteShootControl(RemoteSwitch_t *sw, uint8_t val);
 void InitUserTimer(void);
-void SetFrictionWheelSpeed(uint16_t x);
+void SetFrictionWheelSpeed(float x);
 extern RampGen_t frictionRamp;
 						
 #endif /* __SHOOTTASK_H */

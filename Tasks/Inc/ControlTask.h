@@ -171,6 +171,9 @@ extern float auto_attack_pitch_kd;
 
 extern unsigned int enemy_lost;
 
+extern float friclSpeedTarget;
+extern float fricrSpeedTarget;
+
 void CMControlInit(void);
 
 #endif /*__ CONTROLTASK_H */
