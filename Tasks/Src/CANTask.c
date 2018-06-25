@@ -20,8 +20,12 @@ Motor6623RxMsg_t GMPITCHRx,GMYAWRx;
 uint8_t can1_update = 1;
 uint8_t can1_type = 0;
 
-uint8_t testrecv1 = 0x00;
-uint8_t testrecv2 = 0x00;
+uint8_t redBuf = 0;
+uint8_t gameProgress = 0;
+uint8_t bulletFreq = 0;
+uint16_t shooterHeat0 = 0;
+float bulletSpeed = 0;
+uint8_t bulletSpeedBuf[4] = {0};
 /********************CAN发送*****************************/
 //云台底盘CAN数据依次发送保证发送资源正常
 void HAL_CAN_TxCpltCallback(CAN_HandleTypeDef* hcan)
@@ -87,8 +91,18 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan){
 				GMPITCHRx.giveIntensity = CanRxGetU16(CMGMCanRxMsg, 2);
 				break;
 			case UPMSG_RXID:
-				testrecv1 = CMGMCanRxMsg.Data[0];
-			  testrecv2 = CMGMCanRxMsg.Data[4];
+				redBuf = CMGMCanRxMsg.Data[0] & 0x0F;
+				gameProgress = (CMGMCanRxMsg.Data[0]>>4)& 0x0F;
+				bulletFreq = CMGMCanRxMsg.Data[1];
+				shooterHeat0 = (0x0000 | CMGMCanRxMsg.Data[2]) | (CMGMCanRxMsg.Data[3]<<8);
+				unsigned char * b = NULL;
+				b = (unsigned char*)&bulletSpeed;
+				char c[4] = {0};
+				c[0] = CMGMCanRxMsg.Data[4];c[1] = CMGMCanRxMsg.Data[5];c[2] = CMGMCanRxMsg.Data[6];c[3] = CMGMCanRxMsg.Data[7];
+				for(int i = 0; i<4; i++){
+					b[i] = (unsigned char)c[i];
+					bulletSpeedBuf[i] = CMGMCanRxMsg.Data[i+4];
+				}
 				break;
 			default:
 			Error_Handler();

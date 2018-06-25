@@ -39,11 +39,15 @@ void manifoldUartRxCpltCallback() //妙算自动打击通信数据处理
 			{
 				if(auto_buffer[3]==0xA6)
 				{
-					find_enemy = 1;
+					//find_enemy = 1;
 				}
 				else if(auto_buffer[3]==0xA4)
 				{
-					find_enemy = 0;
+					//find_enemy = 0;
+				}
+				else if(auto_buffer[3]==0xA8)
+				{
+					//find_enemy = 0;
 				}
 				else
 				{
@@ -56,9 +60,26 @@ void manifoldUartRxCpltCallback() //妙算自动打击通信数据处理
 			{
 				if (auto_buffer[6] == 0xA7) 
 				{
-					enemy_yaw = (0x0000 | auto_buffer[2]) | (auto_buffer[1]<<8);
-					enemy_pitch = (0x0000 | auto_buffer[5]) | (auto_buffer[4]<<8);
-					enemy_detect_cnt = 0;    //有更新数据
+					if(auto_buffer[3]==0xA6)
+					{
+						find_enemy = 1;
+						target_hero = 0;
+						enemy_yaw = (0x0000 | auto_buffer[2]) | (auto_buffer[1]<<8);
+						enemy_pitch = (0x0000 | auto_buffer[5]) | (auto_buffer[4]<<8);
+					}
+					else if(auto_buffer[3]==0xA8)
+					{
+						find_enemy = 1;
+						target_hero = 1;
+						enemy_yaw = (0x0000 | auto_buffer[2]) | (auto_buffer[1]<<8);
+						enemy_pitch = (0x0000 | auto_buffer[5]) | (auto_buffer[4]<<8);
+					}
+					else if(auto_buffer[3]==0xA4 || auto_buffer[3]==0xA3) 
+					{
+						find_enemy = 0;
+						if(auto_buffer[3]==0xA3) enemy_lost = 2100;
+					}
+					manifold_fine_cnt = 0;
 				}
 				auto_receiving = 0;
 				auto_buffercnt = 0;

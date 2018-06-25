@@ -32,5 +32,6 @@
 #include "ManifoldTask.h"
 #include "JudgeTask.h"
 #include "UpperTask.h"
+#include "bsp_imu.h"
 
 #endif /* __INCLUDES_H */

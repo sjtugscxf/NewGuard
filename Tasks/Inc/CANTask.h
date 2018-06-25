@@ -25,7 +25,7 @@
 #define GMYAW_RXID 0x206u
 #define GMPITCH_RXID 0x205u
 
-#define UPMSG_RXID 0x301u
+#define UPMSG_RXID 0x305u
 
 //TxID
 #define CM_TXID 0x200u
@@ -53,5 +53,12 @@ extern uint8_t can1_update;
 extern uint8_t can1_type;
 
 void InitCanReception();
+
+extern uint8_t redBuf;
+extern uint8_t gameProgress;
+extern uint8_t bulletFreq;
+extern uint16_t shooterHeat0;
+extern float bulletSpeed;
+extern uint8_t bulletSpeedBuf[4];
 
 #endif /*__ CANTASK_H */

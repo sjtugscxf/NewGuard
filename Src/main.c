@@ -17,7 +17,7 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "includes.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -59,7 +59,20 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+	HAL_NVIC_DisableIRQ(USART2_IRQn);
+	HAL_NVIC_DisableIRQ(DMA1_Stream5_IRQn);
+	HAL_NVIC_DisableIRQ(DMA1_Stream1_IRQn);
+	HAL_NVIC_DisableIRQ(DMA2_Stream1_IRQn);
+	HAL_NVIC_DisableIRQ(USART3_IRQn);
+	HAL_NVIC_DisableIRQ(USART6_IRQn);
+	HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+	HAL_NVIC_DisableIRQ(USART1_IRQn);
+	HAL_NVIC_DisableIRQ(DMA2_Stream2_IRQn);
+	HAL_NVIC_DisableIRQ(TIM7_IRQn);
+	HAL_NVIC_DisableIRQ(TIM6_DAC_IRQn);
+	#ifdef DEBUG_MODE
+		HAL_NVIC_DisableIRQ(TIM1_UP_TIM10_IRQn);
+	#endif
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -78,6 +91,35 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
 
+	InitRemoteControl();
+	//InitMPU6500();
+	mpu_device_init();
+	init_quaternion();	
+	CMControlInit();
+	InitCanReception();
+	InitManifoldUart();
+	
+	#ifdef DEBUG_MODE
+	ctrlUartInit();
+	HAL_TIM_Base_Start_IT(&htim10);
+	#endif
+	
+	//InitJudgeUart();
+	HAL_TIM_Base_Start_IT(&htim6);
+	HAL_TIM_Base_Start_IT(&htim7);
+	
+	HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
+	HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
+	HAL_NVIC_EnableIRQ(USART3_IRQn);
+	HAL_NVIC_EnableIRQ(USART6_IRQn);
+	HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+	HAL_NVIC_EnableIRQ(USART1_IRQn);
+	HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
+	HAL_NVIC_EnableIRQ(TIM7_IRQn);
+	#ifdef DEBUG_MODE
+		HAL_NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
+	#endif
+	HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -87,7 +129,10 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-
+		//IMURefresh();
+		mpu_get_data();
+		imu_ahrs_update();
+		imu_attitude_update(); 
   }
   /* USER CODE END 3 */
 

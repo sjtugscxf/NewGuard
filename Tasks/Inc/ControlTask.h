@@ -14,12 +14,33 @@
 
 #include "includes.h"
 
-#define AUTO_ATTACK_YAW_KP      0.1f
-#define AUTO_ATTACK_YAW_KD      0 
-#define AUTO_ATTACK_PITCH_KP      0.0005f
-#define AUTO_ATTACK_PITCH_KD      0 
-#define YAW_OFFSET         330u  
-#define PITCH_OFFSET       220u  
+#define AUTO_ATTACK_YAW_KP        1.5f
+#define AUTO_ATTACK_YAW_KD        0.0f 
+#define AUTO_ATTACK_PITCH_KP      0.0007f
+#define AUTO_ATTACK_PITCH_KD      0.0f 
+//#define YAW_OFFSET         320u  
+//#define PITCH_OFFSET       210u  
+
+#define ODOMETRY_FACT      0.01f 
+#define ODOMETRY_UPMAX1    180000.0f 
+#define ODOMETRY_DOWNMAX1  -180000.0f 
+#define ODOMETRY_SPEED1    300.0f 
+#define ODOMETRY_UPMAX2    70000.0f 
+#define ODOMETRY_DOWNMAX2  -70000.0f 
+#define ODOMETRY_SPEED2    200.0f 
+#define ODOMETRY_SPEED3    40.0f 
+
+#define PITCHANGLETARGETMAX1    68.0f 
+#define PITCHANGLETARGETMAX2    68.0f 
+#define PITCHANGLETARGETMIN1     0.0f 
+#define PITCHANGLETARGETMIN2     0.0f 
+
+#define YAW_DEFEND_SPEED       200.0f
+#define PITCH_DEFEND_SPEED       0.08f
+
+#define BULLET_SPEED       1200.0f  //bullet_ref = 400; Ã»ÓÐÅö×²¿ª¹ØµÄÊ±ºò
+#define STOPHEAT       300u
+
 #define CHASSIS_SPEED_ATTENUATION   (1.30f)
 #define CHASSIS_MOTOR_ROTATE_PID_DEFAULT \
 {\
@@ -127,7 +148,8 @@ extern WorkState_e WorkState;
 extern uint8_t find_enemy;
 extern uint16_t enemy_pitch;
 extern uint16_t enemy_yaw;
-extern uint16_t enemy_detect_cnt;
+extern uint16_t manifold_fine_cnt;
+extern uint8_t target_hero;
 
 extern int16_t yawIntensity ;
 
@@ -146,6 +168,8 @@ extern float auto_attack_yaw_kp;
 extern float auto_attack_pitch_kp;
 extern float auto_attack_yaw_kd;
 extern float auto_attack_pitch_kd;
+
+extern unsigned int enemy_lost;
 
 void CMControlInit(void);
 
