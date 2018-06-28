@@ -610,20 +610,11 @@ float pitchAngleTargetMin = 0;
 float yawSpeed = 200;
 void Defend_Action()
 {
-	if(odometry > -170000 && odometry < -140000)
-	{
-		pitchAngleTargetMin = PITCHANGLETARGETMIN2;
-	}
-	else 
-	{
-		pitchAngleTargetMin = PITCHANGLETARGETMIN1;
-	}
-	
 	if(pitchAngleTarget > (PITCHANGLETARGETMAX1 - 0.5))
 	{
 		pitch_dir = 0;
 	}
-	else if(pitchAngleTarget < (pitchAngleTargetMin + 0.5))
+	else if(pitchAngleTarget < (PITCHANGLETARGETMIN1 + 0.5))
 	{
 		pitch_dir = 1;
 	}
@@ -642,45 +633,23 @@ void Defend_Action()
 	if(odometry < ODOMETRY_DOWNMAX1) up_dir = 0;
 	if(odometry > ODOMETRY_UPMAX1) up_dir = 1;
 	
-	if(odometry > -170000 && odometry < -140000 && nobullet == 0)
+	if(up_dir == 0) 
 	{
-		if(up_dir == 0) 
+		if (ChassisSpeedRef.forward_back_ref < ODOMETRY_SPEED1) 
 		{
-			if (ChassisSpeedRef.forward_back_ref > ODOMETRY_SPEED3) 
-			{
-				ChassisSpeedRef.forward_back_ref -= 4;
-			}
-			else ChassisSpeedRef.forward_back_ref = ODOMETRY_SPEED3;
+			if(odometry < -400000) ChassisSpeedRef.forward_back_ref += 10;
+			else ChassisSpeedRef.forward_back_ref += 0.4;
 		}
-		else if(up_dir == 1) 
-		{
-			if (ChassisSpeedRef.forward_back_ref < -ODOMETRY_SPEED3)
-			{
-				ChassisSpeedRef.forward_back_ref += 4;
-			}
-			else ChassisSpeedRef.forward_back_ref = -ODOMETRY_SPEED3;
-		}
+		else ChassisSpeedRef.forward_back_ref = ODOMETRY_SPEED1;
 	}
-	else 
+	else if(up_dir == 1) 
 	{
-		if(up_dir == 0) 
+		if (ChassisSpeedRef.forward_back_ref > -ODOMETRY_SPEED1)
 		{
-			if (ChassisSpeedRef.forward_back_ref < ODOMETRY_SPEED1) 
-			{
-				if(odometry < -400000) ChassisSpeedRef.forward_back_ref += 10;
-				else ChassisSpeedRef.forward_back_ref += 0.4;
-			}
-			else ChassisSpeedRef.forward_back_ref = ODOMETRY_SPEED1;
+			if(odometry > 400000) ChassisSpeedRef.forward_back_ref -= 10;
+			else ChassisSpeedRef.forward_back_ref -= 0.4;
 		}
-		else if(up_dir == 1) 
-		{
-			if (ChassisSpeedRef.forward_back_ref > -ODOMETRY_SPEED1)
-			{
-				if(odometry > 400000) ChassisSpeedRef.forward_back_ref -= 10;
-				else ChassisSpeedRef.forward_back_ref -= 0.4;
-			}
-			else ChassisSpeedRef.forward_back_ref = -ODOMETRY_SPEED1;
-		}
+		else ChassisSpeedRef.forward_back_ref = -ODOMETRY_SPEED1;
 	}
 	
 	bullet_ref = 0;
@@ -691,26 +660,6 @@ uint8_t up_diratt = 0;
 float pitchAngleTargetMax = PITCHANGLETARGETMAX1;
 void Attack_Action()
 {
-	if(odometry < (odometryatt + ODOMETRY_DOWNMAX2) || odometry < ODOMETRY_DOWNMAX2) ChassisSpeedRef.forward_back_ref = ODOMETRY_SPEED2;
-	if(odometry > (odometryatt + ODOMETRY_UPMAX2) || odometry > ODOMETRY_UPMAX2) ChassisSpeedRef.forward_back_ref = -ODOMETRY_SPEED2;
-	
-//	if(shooterHeat0 > STOPHEAT) 
-//	{
-//		if(odometry < (odometryatt + ODOMETRY_DOWNMAX2) || odometry < ODOMETRY_DOWNMAX1) up_diratt = 0;
-//		if(odometry > (odometryatt + ODOMETRY_UPMAX2) || odometry > ODOMETRY_UPMAX1) up_diratt = 1;
-//		
-//		if(up_diratt == 0) 
-//		{
-//			ChassisSpeedRef.forward_back_ref = ODOMETRY_SPEED2;
-//		}
-//		else if(up_diratt == 1) 
-//		{
-//			ChassisSpeedRef.forward_back_ref = -ODOMETRY_SPEED2;
-//		}
-//	}
-//	else if (shooterHeat0 < 150) 
-	ChassisSpeedRef.forward_back_ref = 0.0;
-		
 	static float enemy_yaw_err_last = 0;
 	enemy_yaw_err = (float)(yaw_offset - enemy_yaw);
 	enemy_yaw_out = enemy_yaw_err *  AUTO_ATTACK_YAW_KP + (enemy_yaw_err - enemy_yaw_err_last)*AUTO_ATTACK_YAW_KD;
