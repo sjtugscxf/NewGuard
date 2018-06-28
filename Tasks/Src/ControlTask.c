@@ -297,8 +297,10 @@ void WorkStateFSM(void)
 			if (inputmode == STOP) 
 			{
 				WorkState = STOP_STATE;
-				SetFrictionWheelSpeed(0); 
+				ShootState = NOSHOOTING;
+				SetFrictionWheelSpeed(FRICTION_WHEEL_ZERO);
 				FrictionWheelState = FRICTION_WHEEL_OFF;
+				frictionRamp.ResetCounter(&frictionRamp);
 			}
 			else if (inputmode == AUTO)
 			{
@@ -307,9 +309,12 @@ void WorkStateFSM(void)
 			
 			if(gameProgress == 4)
 			{
-				SetFrictionWheelSpeed(400); 
-				WorkState = DEFEND_STATE;
-				FrictionWheelState = FRICTION_WHEEL_ON;
+				SetFrictionWheelSpeed(FRICTION_WHEEL_ZERO + (FRICTION_WHEEL_MAX_DUTY-FRICTION_WHEEL_ZERO)*frictionRamp.Calc(&frictionRamp)); 
+				if(frictionRamp.IsOverflow(&frictionRamp))
+				{
+					FrictionWheelState = FRICTION_WHEEL_ON; 	
+					WorkState = DEFEND_STATE;
+				}			
 			}
 			
 			if (blink_cnt == 1000) 
@@ -329,9 +334,10 @@ void WorkStateFSM(void)
 			if (inputmode == STOP) 
 			{
 				WorkState = STOP_STATE;
-				SetFrictionWheelSpeed(0); 
-				FrictionWheelState = FRICTION_WHEEL_OFF;
+				FrictionWheelState = FRICTION_WHEEL_OFF;				  
+				SetFrictionWheelSpeed(FRICTION_WHEEL_ZERO);
 				frictionRamp.ResetCounter(&frictionRamp);
+				ShootState = NOSHOOTING;
 				bulletshootedcnt = 0;
 				nobullet = 0;
 				find_enemy = 0;
@@ -374,9 +380,10 @@ void WorkStateFSM(void)
 			if (inputmode == STOP) 
 			{
 				WorkState = STOP_STATE;
-				SetFrictionWheelSpeed(0); 
+				FrictionWheelState = FRICTION_WHEEL_OFF;				  
+				SetFrictionWheelSpeed(FRICTION_WHEEL_ZERO);
 				frictionRamp.ResetCounter(&frictionRamp);
-				FrictionWheelState = FRICTION_WHEEL_OFF;
+				ShootState = NOSHOOTING;
 				bulletshootedcnt = 0;
 				nobullet = 0;
 				find_enemy = 0;

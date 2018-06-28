@@ -14,9 +14,19 @@
 
 #include "includes.h"
 
-#define FRICTION_RAMP_TICK_COUNT				100
+#define FRICTION3510
+
+#define FRICTION_RAMP_TICK_COUNT				 100
+
+#ifdef FRICTION3510
+#define FRICTION_WHEEL_MAX_DUTY         150
+#define FRICTION_WHEEL_ZERO         0
+#else 
 #define FRICTION_WHEEL_MAX_DUTY         1350
-#define FRICTION_TIM  htim12
+#define FRICTION_WHEEL_ZERO         1000
+#endif
+
+#define FRICTION_TIM  htim5
 
 typedef __packed enum
 {
@@ -33,7 +43,13 @@ typedef __packed enum
 
 void RemoteShootControl(RemoteSwitch_t *sw, uint8_t val);
 void InitUserTimer(void);
+
+#ifdef FRICTION3510
 void SetFrictionWheelSpeed(float x);
+#else 
+void SetFrictionWheelSpeed(uint16_t x);
+#endif
+
 extern RampGen_t frictionRamp;
 						
 #endif /* __SHOOTTASK_H */

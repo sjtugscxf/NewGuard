@@ -88,6 +88,7 @@ int main(void)
   MX_TIM7_Init();
   MX_TIM10_Init();
   MX_CAN2_Init();
+  MX_TIM5_Init();
 
   /* USER CODE BEGIN 2 */
 
@@ -107,6 +108,7 @@ int main(void)
 	//InitJudgeUart();
 	HAL_TIM_Base_Start_IT(&htim6);
 	HAL_TIM_Base_Start_IT(&htim7);
+	InitUserTimer();
 	
 	HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
 	HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
